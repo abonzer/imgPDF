@@ -1,0 +1,458 @@
+<!doctype html>
+<html>
+
+<head>
+    		<link rel="stylesheet" type="text/css" href="./css/cssStyle-V2.css"/> <!-- cssStyle-V2.css -->
+	
+	<!-- Resource style -->
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+	<meta id="metatagScale" name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1'>
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+
+<body>
+	<div id='navToggle' class='noselect navToggleBtn' onclick="navToggleHS()"><i id='navToggleIco' class="material-icons">keyboard_arrow_up</i>
+	</div>
+	<nav id='HeaderNavTopBar' class='TopNav openNav noselect'>
+		<div class='Opts' onclick='viewIMGPDF()'><i style='vertical-align: middle;' class="material-icons"> eco </i> imgPDF</div>
+		<div class='Opts' onclick='managePagesSequence("NewFile")'>New File</div>
+		<div class='Opts' onclick='managePagesSequence("AddPages")'>Add Pages</div>
+	</nav>
+	<section id='managePagesSequence' class='navOptsWindow'>
+		<div class='AarrangePgContainer'>
+			<div style=" padding: 10px; display: inline-block; color: #4c4c4c; font-size: 18px; cursor: pointer; " onclick="managePagesSequenceBack()"><i class="material-icons" style=" vertical-align: middle; margin-top: -3px; font-size: 32px; color: #4c4c4cb5; "> keyboard_arrow_left </i> Go Back</div>
+			<br/>
+			<label class='flieUploadBtn actionBTN' style=""><i class="material-icons" style="vertical-align: middle;margin-top: -3px;font-size: 32px;color: #38383882;">control_point</i> Add Page
+				<input id="files" type="file" class="hide_file_input" multiple/>
+			</label>
+			<div style='padding:14px; margin:auto' ;>
+				<div id="sortableImgThumbnailPreview"></div>
+			</div>
+		</div>
+	</section>
+	<div id="openImgPDFRearrangePages"></div>
+	<section id='PDFscrollSection' style="overflow-x: scroll;overflow-y: scroll;height: 100vh;background: #f3f2f1;">
+		<div id="viewerPDFpages" class="viewerPDFpages noselect">
+			<!--<section class="pg-section">
+		<div>
+			<h2>No Page Available</h2>
+		</div>
+	</section>-->
+		</div>
+	</section>
+	<div id="onHover_PDFzoomnav" class="onHover_PDFzoomnav hidePanel" onmousemove="mouseStatus(true);" onmouseout="mouseStatus(false);">
+		<div id="PDFnavFitto" class="PDFzoomnavBtn fitto noselect" style="bottom: 156px;" alt="Fit to width" onclick="FittoPDFviewer()">	<i id="Fittowidth" class="material-icons" style="font-size:22px;vertical-align: middle; display: none;" title="Fit to width">fullscreen</i>
+			<i id="Fittopage" class="material-icons" style="font-size:22px;  vertical-align: middle;" title="Fit to page">fullscreen_exit</i>
+		</div>
+		<div id="PDFnavZoomin" class="PDFzoomnavBtn zoomin noselect" style="bottom: 96px;" title="Zoom in" onclick="PDFnavZoomin()"><i id="Rotateclockwise" class="material-icons" style="font-size:22px;vertical-align: middle;">add</i>
+		</div>
+		<div id="PDFnavZoomout" class="PDFzoomnavBtn zoomout noselect" style="bottom: 50px;" title="Zoom out" onclick="PDFnavZoomout()"><i id="Rotateclockwise" class="material-icons" style="font-size:22px;vertical-align: middle;">remove</i>
+		</div>
+	</div>
+	<div id="PDFcurPageNum" class="noselect PageDisplayBox" style="">Page 1</div>
+</body>
+<script>
+	var numPDFpages = 5;
+	var urlPDFpages = [];
+	var DefaultPDFpages = ["./img/P0.png", "./img/P1.png","./img/P2.png"];
+	
+	DefaultLoadPDFpages();
+	
+	function DefaultLoadPDFpages(){
+		var output = document.getElementById("sortableImgThumbnailPreview");
+		
+		for(var i=0; i < DefaultPDFpages.length; i++){		
+			var imgThumbnailElem = "<div class='RearangeBox imgThumbContainer'><i class='material-icons imgRemoveBtn' onclick='removeThumbnailIMG(this)'>cancel</i><div class='IMGthumbnail' ><img  src='" + DefaultPDFpages[i] + "'" + "title='Page "+ (i+1) + "'/></div><div class='imgName'>Page "+ (i+1) +"</div></div>";	
+			output.innerHTML = output.innerHTML + imgThumbnailElem;
+		}	
+		renderPdfPages();
+	}
+	
+	function LoadPDFpages(){	
+		
+		var viewerPDFpages = document.getElementById('viewerPDFpages');
+		viewerPDFpages.innerHTML = "";
+		var colorPage = ["#fab45d", "#f26c64","#dc4c83","#a35495","#2e5367","#267481","#6a7083"]; 
+		var colorNum = 0;
+			
+		for (var Page = 0; Page <= numPDFpages-1; Page++) {
+					
+			var new_Page = document.createElement("section");
+	    		new_Page.className = "pg-section";
+	    		
+	    	var AddPage = "<div class='PDFpageDiv' style='background-color:"+ colorPage[colorNum] +";'><img class='pdfPageImg' src='"+urlPDFpages[Page]+"' style='width: 100%;  height: 100%; margin-bottom: -6px;' onerror='hideBrokenPDFpages(this);'/><h2>"+"Page "+ (Page+1) +"</h2></div>";
+	    	
+	    	new_Page.innerHTML = AddPage ;	
+	    	viewerPDFpages.appendChild(new_Page);
+	    	    	
+	    		if(colorNum < colorPage.length-1){colorNum = colorNum+1;}else{colorNum=0;};
+		}
+		
+		var PDFpage = document.getElementsByClassName('pg-section');
+		for (var i = 0; i < PDFpage.length; i++) {		   
+		    var h1 = document.getElementsByClassName("PDFpageDiv")[i].children;	       
+	  		  	h1[1].style.display = "none"; 	
+	   			PDFpage[i].style.marginBottom  = (PDFpage[i].offsetWidth*0.018)+"px";
+		}
+	}
+	
+	
+	
+	
+	function hideBrokenPDFpages(p){
+		p.parentNode.classList.add("hideBrokenPDFpages");
+		p.style.display = "none";	
+	}
+	
+	
+	var mouse = false;
+	
+	function mouseStatus(n) {
+	     var hidePDFnav ;
+	     mouse = n;       
+	     	if (mouse === true) {     		
+	     			clearTimeout(hidePDFnav);
+	     			     			
+					document.getElementById("onHover_PDFzoomnav").classList.remove('hidePanel');
+					document.getElementById("onHover_PDFzoomnav").classList.add('activePanel');
+	          }else{          	 
+	          	document.getElementById("onHover_PDFzoomnav").classList.add('hidePanel');
+				document.getElementById("onHover_PDFzoomnav").classList.remove('activePanel');  			
+	          }
+	}
+	
+	
+	var fittoStatus = "Fittopage";
+	
+	function FittoPDFviewer(){
+		
+		var PDFpage = document.getElementsByClassName('pg-section');
+		var PDFpageImg = document.getElementsByClassName('pdfPageImg');
+		
+			// maxHeight of Page from PDF
+			var maxHeightofPDFPage = 0;		
+			var maxHeightofPDFPageNo = 0;
+			
+			// maxWidth of Page from PDF
+			var maxWidthofPDFPage = 0;		
+			var maxWidthofPDFPageNo = 0;
+			
+		/*for (var i = 0; i < PDFpage.length; i++) {			
+		  if(PDFpage[i].offsetHeight > maxHeightofPDFPage){
+		  	maxHeightofPDFPage = PDFpage[i].offsetHeight; 
+		  	maxHeightofPDFPageNo = i;
+		  	}	  		  	 	  		
+		}*/
+		
+		for (var i = 0; i < PDFpageImg.length; i++) {	
+	  		PDFpageImg[i].style.width = "auto";  		
+	  		if(PDFpageImg[i].offsetWidth > maxWidthofPDFPage){
+		  		maxWidthofPDFPage = PDFpageImg[i].offsetWidth; 
+		  		maxWidthofPDFPageNo = i;
+		  	}
+		  	if(PDFpageImg[i].offsetHeight > maxHeightofPDFPage){
+		  	maxHeightofPDFPage = PDFpageImg[i].offsetHeight; 
+		  	maxHeightofPDFPageNo = i;
+		  	}
+		  	PDFpageImg[i].style.width = "100%";
+		}
+		
+		
+		//alert("maxHeight: "+ maxHeightofPDFPage+" - Page: "+ maxHeightofPDFPageNo);
+		
+		// Fittopage fit page Height
+		if(fittoStatus == "Fittopage"){
+			var setheight = window.innerHeight || document.documentElement.clientHeight|| document.body.clientHeight;		
+			var setwidth, defaultwidth;
+			var maxhpn = maxHeightofPDFPageNo
+			defaultwidth = PDFpage[maxhpn].offsetWidth;
+			
+			for (var i = 150; i < 10000; i+=5) {		
+	  			PDFpage[maxhpn].style.width = i+"px";
+	  			var diff = Math.abs(PDFpage[maxhpn].offsetHeight-setheight); 
+	  			
+	  			if((PDFpage[maxhpn].offsetHeight-setheight)>0){ setwidth = "200px"; break; }	//setwidth = 80+"%";
+	  					
+	  			if(diff < 6){
+	  				setwidth = i+"px"; break;
+	  				}
+	  			PDFpage[maxhpn].style.width = defaultwidth+"px";   			 			
+			}
+			
+			for (var i = 0; i < PDFpage.length; i++) {		
+		  		PDFpage[i].style.width = setwidth;
+		  		PDFpage[i].style.marginBottom  = (PDFpage[i].offsetWidth*0.018)+"px";	  		
+			}
+			
+			document.getElementById('Fittopage').style.display = "none";
+			document.getElementById('Fittowidth').style.display = "block";			
+			fittoStatus = "Fittowidth"
+		
+		// Fittowidth fit page width	
+		}else if(fittoStatus == "Fittowidth"){
+			
+			for (var i = 0; i < PDFpage.length; i++) {		
+		  		PDFpage[i].style.width = "99%"; //"calc(100% - 1px)";
+		  		PDFpage[i].style.marginBottom  = (PDFpage[i].offsetWidth*0.018)+"px";
+			}
+	
+			// Imp Alternativ
+			/*for (var i = 0; i < PDFpage.length; i++) {	
+				PDFpageImg[i].style.width = "auto";	
+				var widthRatio = (PDFpageImg[i].offsetWidth/maxWidthofPDFPage)*100;
+						
+		  		PDFpage[i].style.width = widthRatio+"%"; //"calc(100% - 1px)";
+		  		PDFpage[i].style.marginBottom  = (PDFpage[i].offsetWidth*0.018)+"px";
+		  		
+		  	PDFpageImg[i].style.width = "100%";		
+			}*/
+			
+			document.getElementById('Fittopage').style.display = "block";
+			document.getElementById('Fittowidth').style.display = "none";
+			fittoStatus = "Fittopage"
+		}
+	}
+	
+	
+	function PDFnavZoomout(){
+		var PDFpageW = document.getElementsByClassName('pg-section');
+		
+		if(document.getElementById('onHover_PDFzoomnav').classList.contains('mobile_device')){
+				  var zoomSize = 250;
+		}else {   var zoomSize = 100; 	}
+		
+		for (var i = 0; i < PDFpageW.length; i++) {		
+	  		PDFpageW[i].style.width = PDFpageW[i].offsetWidth-zoomSize+"px";
+	  		PDFpageW[i].style.marginBottom  = (PDFpageW[i].offsetWidth*0.018)+"px";
+		}
+	}
+	function PDFnavZoomin(){
+		var PDFpageW = document.getElementsByClassName('pg-section');	
+		
+		if(document.getElementById('onHover_PDFzoomnav').classList.contains('mobile_device')){
+				  var zoomSize = 250;
+		}else {   var zoomSize = 100; 	}
+		
+		var newWidth = PDFpageW[0].offsetWidth+zoomSize+"px";
+		
+		
+		for (var i = 0; i < PDFpageW.length; i++) {				
+			PDFpageW[i].style.width = newWidth ;  		
+	  		PDFpageW[i].style.marginBottom  = (PDFpageW[i].offsetWidth*0.018)+"px";
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	// Determin / Find the Page Current showing/open/read/view
+	function PageScrolledIntoView() {
+		var pageIntoViewStatus = "none";
+		var setheight = document.getElementById('viewerPDFpages').clientHeight;
+		var CurPageNum = 0;
+		var TotalPagePDF = document.getElementsByClassName('PDFpageDiv').length;
+	
+		for(var page = 1; page < TotalPagePDF; page++ ){
+		var el = document.getElementsByClassName('PDFpageDiv')[page-1];
+		
+		var elemTop = el.getBoundingClientRect().top;
+	    var elemBottom = el.getBoundingClientRect().bottom;
+	    if((page-2) >= 0){
+	    	    var PreviousPageTopPos = document.getElementsByClassName('PDFpageDiv')[page-2].getBoundingClientRect().top;
+	    		var PreviousPageHeightpx = document.getElementsByClassName('PDFpageDiv')[page-2].offsetHeight;
+	    	}else{
+	    		var PreviousPageTopPos  = -100
+	    		var PreviousPageHeightpx = 10;
+	    	}
+	    
+	    	
+		//if(elemTop >= 0){pageIntoViewStatus = "nextPages"}
+		if(elemTop <= (setheight*0.40) && PreviousPageTopPos < -Math.abs(PreviousPageHeightpx*0.7)){pageIntoViewStatus = "CurPage - (view now)"; CurPageNum = page;}
+		//if(elemBottom <= 0){pageIntoViewStatus = "PreviousPages - (visited)"}
+		
+	    }
+	           
+	    return [CurPageNum, TotalPagePDF];
+	}
+	
+	function getPDFPageScrollStatus(P) {
+		var pageIntoViewStatus1, pageIntoViewStatus2, pageIntoViewStatus3;
+		var setheight = document.getElementById('viewerPDFpages').clientHeight;
+		var Allpage =[];
+	
+		for(var page = P-1; page < P+2; page++ ){
+		var el = document.getElementsByClassName('pg-section')[page-1];
+		
+		var elemTop = el.getBoundingClientRect().top;
+	    var elemBottom = el.getBoundingClientRect().bottom;
+	    	
+		if(elemTop >= 0){pageIntoViewStatus1 = "nextPages";}
+		if(elemTop <= (setheight*0.40)){pageIntoViewStatus2 = "CurPage";}
+		if(elemBottom <= 0){pageIntoViewStatus3 = "PreviousPages"}
+		 Allpage[page-1] = page+"Page :"+ pageIntoViewStatus1 + " - " + pageIntoViewStatus2 + " - " + pageIntoViewStatus3;
+	    }
+	    
+	    return Allpage;
+	}
+	
+	
+	// Arrow key to move page document.getElementsByClassName("pg-section")[4].scrollIntoView();
+	
+	document.onkeydown = abc;
+	function abc(event){
+		var curPage = PageScrolledIntoView()[0];
+		var totalPage = PageScrolledIntoView()[1];
+	        
+	        if(event.keyCode == 39){  //Right arrow Key        	 
+	        	if(curPage < totalPage){ document.getElementsByClassName("pg-section")[curPage-1+1].scrollIntoView();}
+	        } else  if(event.keyCode == 37){  //Left arrow Key
+	        	if(curPage > 1){document.getElementsByClassName("pg-section")[curPage-1-1].scrollIntoView();}
+	        } 
+	}
+	
+	
+	// Div Show cur Page Number on Scroll 
+	document.getElementById('PDFscrollSection').onscroll = function() {onscrollCurPageNumUpdate()};
+	function onscrollCurPageNumUpdate(){
+		document.getElementById("PDFcurPageNum").innerHTML = "Page " + PageScrolledIntoView()[0];
+	}
+	
+	function navToggleHS(){
+		var nav = document.getElementById("HeaderNavTopBar");
+		
+		if(nav.classList.contains("openNav")){
+			document.getElementById("navToggleIco").style.transform = "rotate(180deg)";
+			nav.classList.remove("openNav");
+			nav.classList.add("HideNav");	
+				
+		}else if(nav.classList.contains("HideNav")){
+			document.getElementById("navToggleIco").style.transform = "rotate(0deg)";
+			nav.classList.add("openNav");
+			nav.classList.remove("HideNav");		
+		}
+	}
+	
+	
+	function managePagesSequence(actionType){
+		document.getElementById("managePagesSequence").style.display = 'block';
+		document.getElementById("PDFscrollSection").style.display = 'none';
+		document.getElementById("PDFcurPageNum").style.display = 'none';
+		document.getElementById("onHover_PDFzoomnav").style.display = 'none';
+		
+		if(actionType == 'NewFile'){
+			document.getElementById("sortableImgThumbnailPreview").innerHTML = '';
+		}
+	}
+	
+	function managePagesSequenceBack(){
+		document.getElementById("managePagesSequence").style.display = 'none';
+		document.getElementById("PDFscrollSection").style.display = 'block';
+		document.getElementById("PDFcurPageNum").style.display = 'block';
+		document.getElementById("onHover_PDFzoomnav").style.display = 'block';
+		renderPdfPages();	
+	}
+	
+	function viewIMGPDF(){
+		document.getElementById("managePagesSequence").style.display = 'none';
+		document.getElementById("PDFscrollSection").style.display = 'block';
+		document.getElementById("PDFcurPageNum").style.display = 'block';
+		document.getElementById("onHover_PDFzoomnav").style.display = 'block';	
+	}
+	
+	
+	
+	function renderPdfPages(){
+		var pages = document.getElementsByClassName("RearangeBox");
+		numPDFpages = pages.length;
+		for(var i = 0; i<pages.length; i++){		
+			var imgSrc = pages[i].innerHTML.split('src="')[1].split('"')[0];
+			urlPDFpages[i] = imgSrc;		
+		}	
+		LoadPDFpages();
+		urlPDFpages = [];
+	}
+	
+	
+	
+	//  Best way to detect a mobile device?
+	if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+		document.getElementById("PDFcurPageNum").classList.add('mobile_device');
+		document.getElementById("onHover_PDFzoomnav").classList.add('mobile_device');
+		document.getElementById("HeaderNavTopBar").classList.add('mobile_device');
+		document.getElementById("metatagScale").setAttribute("content", "width=device-width, initial-scale=.6, maximum-scale=.6");
+		// alert('mobile device');
+	}else{
+		// alert('Not a mobile device')
+	}
+	
+	
+	
+	
+	//-----------------------------------
+	//  File API -  Re-arrange Multiple image upload with preview
+	//--------------------------------------
+	
+	$(function() {
+	            $("#sortableImgThumbnailPreview").sortable({
+	             connectWith: ".RearangeBox",
+	            
+	                
+	              start: function( event, ui ) { 
+	                   $(ui.item).addClass("dragElemThumbnail");
+	                   ui.placeholder.height(ui.item.height());
+	           
+	               },
+	                stop:function( event, ui ) { 
+	                   $(ui.item).removeClass("dragElemThumbnail");
+	               }
+	            });
+	            $("#sortableImgThumbnailPreview").disableSelection();
+	        });
+	
+	
+	
+	
+	document.getElementById('files').addEventListener('change', handleFileSelect, false);
+	
+	  function handleFileSelect(evt) {
+	    
+	    var files = evt.target.files; 
+	    var output = document.getElementById("sortableImgThumbnailPreview");
+	    
+	    // Loop through the FileList and render image files as thumbnails.
+	    for (var i = 0, f; f = files[i]; i++) {
+	
+	      // Only process image files.
+	      if (!f.type.match('image.*')) {
+	        continue;
+	      }
+	
+	      var reader = new FileReader();
+	
+	      // Closure to capture the file information.
+	      reader.onload = (function(theFile) {
+	        return function(e) {
+	          // Render thumbnail.
+	           var imgThumbnailElem = "<div class='RearangeBox imgThumbContainer'><i class='material-icons imgRemoveBtn' onclick='removeThumbnailIMG(this)'>cancel</i><div class='IMGthumbnail' ><img  src='" + e.target.result + "'" + "title='"+ theFile.name + "'/></div><div class='imgName'>"+ theFile.name +"</div></div>";
+	                    
+	                    output.innerHTML = output.innerHTML + imgThumbnailElem; 
+	          
+	        };
+	      })(f);
+	
+	      // Read in the image file as a data URL.
+	      reader.readAsDataURL(f);
+	    }
+	  }
+	
+	  function removeThumbnailIMG(elm){
+	    elm.parentNode.outerHTML='';
+	  }
+</script>
+
+</html>
